@@ -29,7 +29,7 @@ RUN npm install
 RUN npm run build
 
 # Setup API
-FROM golang:1.23.2-bookworm
+FROM golang:1.24-trixie
 
 # Define build arguments
 ARG VERSION
