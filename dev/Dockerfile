@@ -1,4 +1,4 @@
-FROM golang:1.23.2-bookworm
+FROM golang:1.24-trixie
 
 # First install curl if not already installed
 RUN apt-get update
