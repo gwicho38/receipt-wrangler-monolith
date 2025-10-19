@@ -78,6 +78,105 @@ DB_USER=receiptwrangler
 DB_PASSWORD=your_secure_password
 ```
 
+## Deployment with Cloudflare Tunnel
+
+For secure public access without port forwarding, you can deploy Receipt Wrangler behind a Cloudflare Tunnel.
+
+### Prerequisites
+
+- Cloudflare account with a domain
+- `cloudflared` installed on your server or router
+- Cloudflare Tunnel created and authenticated
+
+### Tunnel Configuration
+
+Add Receipt Wrangler to your tunnel's ingress rules in `~/.cloudflared/config.yml`:
+
+```yaml
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /path/to/credentials.json
+
+ingress:
+  - hostname: receipts.yourdomain.com
+    service: http://localhost:8085
+  # ... other services
+  - service: http_status:404
+```
+
+**Important:** Place the Receipt Wrangler rule before the catch-all `http_status:404` rule.
+
+### DNS Configuration
+
+The DNS record should already exist if you used `cloudflared tunnel route dns`. If not, create an A or CNAME record in Cloudflare Dashboard pointing to your tunnel.
+
+### Restart the Tunnel
+
+After updating the configuration, restart the tunnel:
+
+```bash
+# If using systemd
+sudo systemctl restart cloudflared
+
+# If using init.d (OpenWrt, etc.)
+/etc/init.d/cloudflared restart
+
+# Manual restart
+pkill cloudflared
+cloudflared --config ~/.cloudflared/config.yml tunnel run
+```
+
+**Critical:** Always use the proper restart method (init script or systemctl). Manually killing and restarting cloudflared can result in multiple processes running simultaneously, which causes routing conflicts and 404 errors.
+
+### Verify the Configuration
+
+Test that the ingress rule is correctly configured:
+
+```bash
+cloudflared tunnel ingress rule https://receipts.yourdomain.com
+```
+
+Expected output:
+```
+Using rules from /path/to/config.yml
+Matched rule #X
+	hostname: receipts.yourdomain.com
+	service: http://localhost:8085
+```
+
+### Troubleshooting
+
+**404 Errors After Configuration**
+
+If you're getting 404 errors:
+
+1. **Check for multiple cloudflared processes:**
+   ```bash
+   ps aux | grep cloudflared
+   ```
+   You should see only ONE process. If multiple exist, restart using the init script.
+
+2. **Verify local service is running:**
+   ```bash
+   curl http://localhost:8085/
+   ```
+
+3. **Check tunnel logs:**
+   ```bash
+   # Systemd
+   journalctl -u cloudflared -n 50
+
+   # OpenWrt/init.d
+   logread | grep cloudflared
+
+   # Manual
+   cat /var/log/cloudflared.log
+   ```
+
+4. **Clear Cloudflare cache:**
+   - Go to Cloudflare Dashboard
+   - Navigate to Caching → Configuration
+   - Click "Purge Everything"
+
 ## Building from Source
 
 ### Production Build
