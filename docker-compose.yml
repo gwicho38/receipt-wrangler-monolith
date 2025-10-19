@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: receipt-wrangler-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - receipt-wrangler-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  receipt-wrangler:
+    image: noah231515/receipt-wrangler:latest
+    container_name: receipt-wrangler
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:80"
+    environment:
+      # Required: Generate these with: openssl rand -base64 32
+      SECRET_KEY: ${SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+
+      # Database Configuration
+      DB_ENGINE: ${DB_ENGINE:-sqlite}
+      DB_FILENAME: ${DB_FILENAME:-wrangler.sqlite}
+
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+      # Optional Features
+      ENABLE_LOCAL_SIGN_UP: ${ENABLE_LOCAL_SIGN_UP:-true}
+      AI_POWERED_RECEIPTS: ${AI_POWERED_RECEIPTS:-false}
+    volumes:
+      - receipt-wrangler-data:/app/receipt-wrangler-api/data
+      - receipt-wrangler-sqlite:/app/receipt-wrangler-api/sqlite
+      - receipt-wrangler-logs:/app/receipt-wrangler-api/logs
+    networks:
+      - receipt-wrangler-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  redis-data:
+    driver: local
+  receipt-wrangler-data:
+    driver: local
+  receipt-wrangler-sqlite:
+    driver: local
+  receipt-wrangler-logs:
+    driver: local
+
+networks:
+  receipt-wrangler-network:
+    driver: bridge
