@@ -1,0 +1,25 @@
+# Environment files with secrets
+.env
+
+# SQLite databases
+*.sqlite
+*.db
+
+# Logs
+*.log
+logs/
+
+# Docker volumes (local testing)
+data/
+sqlite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

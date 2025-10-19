@@ -37,11 +37,16 @@ See [docker-compose.yml](docker-compose.yml) for a complete setup including Redi
 cp .env.example .env
 
 # Edit .env with your configuration
+# Generate secrets:
+#   SECRET_KEY=$(openssl rand -base64 32)
+#   ENCRYPTION_KEY=$(openssl rand -base64 32)
 nano .env
 
 # Start the stack
 docker-compose up -d
 ```
+
+**Important:** When using docker-compose, set `REDIS_HOST=redis` in your `.env` file (not an IP address). Docker Compose networking uses service names for container-to-container communication.
 
 ## Configuration
 
@@ -62,8 +67,11 @@ Receipt Wrangler can be configured using environment variables. Create a `.env` 
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `PORT` | Port to expose the application on | `8080` |
 | `ENABLE_LOCAL_SIGN_UP` | Allow local user registration | `true` |
-| `AI_POWERED_RECEIPTS` | Enable AI features | `false` |
+| `AI_POWERED_RECEIPTS` | Enable AI features (requires AI-enabled image) | `false` |
+
+**Note on AI Features:** The production Docker image (`noah231515/receipt-wrangler:latest`) does not include AI dependencies. AI features require a Python virtual environment with machine learning libraries. Set `AI_POWERED_RECEIPTS=false` when using the standard production image.
 
 ### PostgreSQL Configuration
 
@@ -246,8 +254,14 @@ Common issues:
 Once running, access Receipt Wrangler at:
 - http://localhost:8080 (or your configured port)
 
-Default credentials (if local signup is enabled):
-- Create an account on first access
+**Default credentials:**
+- Username: `admin`
+- Password: `admin`
+
+**IMPORTANT:** After first login, immediately change the default password:
+1. Click on your user avatar in the top right
+2. Navigate to user management
+3. Update your password to something secure
 
 ### Configuration Issues
 
